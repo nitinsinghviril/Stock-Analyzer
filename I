@@ -1,0 +1,7 @@
+# Go to https://github.com/new
+# Create repo: "stock-analyzer" (public)
+# After creating, run this:
+
+cd /tmp/claude-0/-home-claude/7df53ca7-ad22-5002-8c3d-cd4134ea1cc3/scratchpad/stock-analyzer
+git remote set-url origin https://github.com/nitinsinghviril/stock-analyzer.git
+git push -u origin master
