@@ -42,7 +42,9 @@ def _resolve(raw: str) -> str:
 def _history(ticker: str, period: str):
     if period not in ALLOWED_PERIODS:
         raise HTTPException(status_code=400, detail=f"period must be one of {sorted(ALLOWED_PERIODS)}")
-    history = get_history(ticker, period)
+    # yfinance can return a trailing row with no close yet; drop it so the
+    # latest price and every indicator use real values.
+    history = get_history(ticker, period).dropna(subset=["Close"])
     if history.empty:
         raise HTTPException(status_code=404, detail=f"No market data for {ticker}")
     return history

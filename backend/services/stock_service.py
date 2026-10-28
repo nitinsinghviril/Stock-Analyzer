@@ -4,6 +4,7 @@ Indian listings use the .NS (NSE) or .BO (BSE) suffix, e.g. TCS.NS.
 Results are cached in memory for CACHE_TTL_SECONDS to avoid hammering the source.
 """
 
+import logging
 import re
 import time
 
@@ -12,6 +13,7 @@ import yfinance as yf
 
 from config import CACHE_TTL_SECONDS
 
+logger = logging.getLogger(__name__)
 TICKER_PATTERN = re.compile(r"^[A-Z0-9&\-]{1,15}(\.(NS|BO))?$")
 _cache: dict[tuple, tuple[float, object]] = {}
 
@@ -52,9 +54,13 @@ def get_history(ticker: str, period: str = "1y") -> pd.DataFrame:
 def get_info(ticker: str) -> dict:
     def load():
         try:
-            return yf.Ticker(ticker).info or {}
+            info = yf.Ticker(ticker).info or {}
         except Exception:
+            logger.exception("Company info failed for %s", ticker)
             return {}
+        if not info:
+            logger.warning("Yahoo returned no company info for %s", ticker)
+        return info
 
     return _cached(("info", ticker), load)
 
@@ -64,7 +70,10 @@ def get_news(ticker: str, limit: int = 8) -> list[dict]:
         try:
             items = yf.Ticker(ticker).news or []
         except Exception:
+            logger.exception("News failed for %s", ticker)
             return []
+        if not items:
+            logger.warning("Yahoo returned no news for %s", ticker)
         news = []
         for item in items[:limit]:
             content = item.get("content", item)

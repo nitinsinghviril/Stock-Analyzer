@@ -10,11 +10,22 @@ export default function PriceChart({ data }) {
   const x = (i) => (i / (data.length - 1)) * width;
   const y = (v) => height - ((v - min) / (max - min || 1)) * height;
 
-  const path = (key) =>
-    data
-      .map((d, i) => (d[key] == null ? null : `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`))
+  // Each run of values starts with M and continues with L; a gap starts a new run.
+  const path = (key) => {
+    let command = "M";
+    return data
+      .map((d, i) => {
+        if (d[key] == null) {
+          command = "M";
+          return null;
+        }
+        const segment = `${command}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`;
+        command = "L";
+        return segment;
+      })
       .filter(Boolean)
       .join(" ");
+  };
 
   return (
     <div className="chart">
