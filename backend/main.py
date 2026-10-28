@@ -1,3 +1,5 @@
+import math
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,6 +19,17 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+def json_safe(value):
+    """Replace NaN and infinity with None; JSON cannot represent them."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    return value
 
 
 def _resolve(raw: str) -> str:
@@ -44,18 +57,18 @@ def health():
 def analyze(raw_ticker: str):
     ticker = _resolve(raw_ticker)
     history = _history(ticker, "1y")
-    return {
+    return json_safe({
         "ticker": ticker,
         "technical": analysis_service.technical_summary(history["Close"]),
         "fundamentals": fundamentals(ticker),
         "news": latest_news(ticker),
-    }
+    })
 
 
 @app.get("/api/competitors/{raw_ticker}")
 def competitor_view(raw_ticker: str):
     ticker = _resolve(raw_ticker)
-    return {"ticker": ticker, **competitors(ticker)}
+    return json_safe({"ticker": ticker, **competitors(ticker)})
 
 
 @app.get("/api/chart/{raw_ticker}")
@@ -76,7 +89,7 @@ def chart(raw_ticker: str, period: str = Query("1y")):
             "volume": int(row["Volume"]),
             "sma50": None if sma_value != sma_value else round(float(sma_value), 2),
         })
-    return {"ticker": ticker, "period": period, "data": rows}
+    return json_safe({"ticker": ticker, "period": period, "data": rows})
 
 
 @app.post("/api/cache/clear")

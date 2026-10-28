@@ -49,3 +49,10 @@ def test_normalise_ticker_defaults_to_nse():
 def test_normalise_ticker_rejects_bad_input(bad):
     with pytest.raises(InvalidTicker):
         normalise_ticker(bad)
+
+
+def test_json_safe_replaces_nan_and_infinity():
+    from main import json_safe
+
+    data = {"a": float("nan"), "b": [1.5, float("inf")], "c": {"d": None, "e": 2}}
+    assert json_safe(data) == {"a": None, "b": [1.5, None], "c": {"d": None, "e": 2}}
