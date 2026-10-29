@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { analyze, chart, competitors } from "../api.js";
 import PriceChart from "./PriceChart.jsx";
+import TradingViewWidget from "./TradingViewWidget.jsx";
+import { toTradingViewSymbol } from "../symbols.js";
+
+const colorTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
 const TABS = ["Overview", "Technical", "Fundamental", "Competitors", "News"];
 
@@ -53,6 +57,7 @@ export default function Dashboard({ ticker }) {
   }
 
   const { technical, fundamentals: f, news } = analysis;
+  const tvSymbol = toTradingViewSymbol(analysis.ticker);
 
   return (
     <section className="card">
@@ -86,6 +91,41 @@ export default function Dashboard({ ticker }) {
 
       {tab === "Technical" && (
         <>
+          <TradingViewWidget
+            script="embed-widget-advanced-chart"
+            height={480}
+            config={{
+              autosize: true,
+              symbol: tvSymbol,
+              interval: "D",
+              timezone: "Asia/Kolkata",
+              theme: colorTheme,
+              style: "1",
+              locale: "en",
+              allow_symbol_change: false,
+              studies: [
+                "MASimple@tv-basicstudies",
+                "RSI@tv-basicstudies",
+                "MACD@tv-basicstudies",
+                "BB@tv-basicstudies",
+              ],
+            }}
+          />
+          <TradingViewWidget
+            script="embed-widget-technical-analysis"
+            height={450}
+            config={{
+              interval: "1D",
+              width: "100%",
+              height: 450,
+              isTransparent: false,
+              symbol: tvSymbol,
+              showIntervalTabs: true,
+              displayMode: "single",
+              locale: "en",
+              colorTheme,
+            }}
+          />
           <div className="stats">
             <Stat label="SMA 20" value={fmt(technical.sma["20"])} />
             <Stat label="SMA 50" value={fmt(technical.sma["50"])} />
@@ -108,7 +148,21 @@ export default function Dashboard({ ticker }) {
       )}
 
       {tab === "Fundamental" && (
-        <div className="stats">
+        <>
+          <TradingViewWidget
+            script="embed-widget-financials"
+            height={700}
+            config={{
+              symbol: tvSymbol,
+              colorTheme,
+              isTransparent: false,
+              displayMode: "regular",
+              width: "100%",
+              height: 700,
+              locale: "en",
+            }}
+          />
+          <div className="stats">
           <Stat label="P/E (trailing)" value={fmt(f.pe_ratio)} />
           <Stat label="P/E (forward)" value={fmt(f.forward_pe)} />
           <Stat label="P/B" value={fmt(f.pb_ratio)} />
@@ -119,12 +173,28 @@ export default function Dashboard({ ticker }) {
           <Stat label="Revenue growth" value={fmt(f.revenue_growth_pct, "%")} />
           <Stat label="Earnings growth" value={fmt(f.earnings_growth_pct, "%")} />
           <Stat label="Dividend yield" value={fmt(f.dividend_yield_pct, "%")} />
-        </div>
+          </div>
+        </>
       )}
 
       {tab === "Competitors" && <CompetitorTable data={peers} />}
 
       {tab === "News" && (
+        <>
+          <TradingViewWidget
+            script="embed-widget-timeline"
+            height={550}
+            config={{
+              feedMode: "symbol",
+              symbol: tvSymbol,
+              colorTheme,
+              isTransparent: false,
+              displayMode: "regular",
+              width: "100%",
+              height: 550,
+              locale: "en",
+            }}
+          />
         <ul className="news">
           {news.length === 0 && <li className="muted">No recent headlines.</li>}
           {news.map((item, i) => (
@@ -138,6 +208,7 @@ export default function Dashboard({ ticker }) {
             </li>
           ))}
         </ul>
+        </>
       )}
     </section>
   );
