@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { analyze, chart, competitors } from "../api.js";
 import PriceChart from "./PriceChart.jsx";
+import TechnicalChart from "./TechnicalChart.jsx";
 import TradingViewWidget from "./TradingViewWidget.jsx";
 import { toTradingViewSymbol } from "../symbols.js";
 
@@ -16,7 +17,7 @@ const fmtCap = (value) => {
   return `₹${(value / 1e6).toFixed(2)} M`;
 };
 
-export default function Dashboard({ ticker }) {
+export default function Dashboard({ ticker, onSelect }) {
   const [tab, setTab] = useState("Overview");
   const [analysis, setAnalysis] = useState(null);
   const [prices, setPrices] = useState(null);
@@ -91,7 +92,7 @@ export default function Dashboard({ ticker }) {
 
       {tab === "Technical" && (
         <>
-          <PriceChart data={prices} />
+          <TechnicalChart ticker={analysis.ticker} />
           <TradingViewWidget
             script="embed-widget-technical-analysis"
             height={450}
@@ -107,16 +108,6 @@ export default function Dashboard({ ticker }) {
               colorTheme,
             }}
           />
-          <div className="stats">
-            <Stat label="SMA 20" value={fmt(technical.sma["20"])} />
-            <Stat label="SMA 50" value={fmt(technical.sma["50"])} />
-            <Stat label="SMA 200" value={fmt(technical.sma["200"])} />
-            <Stat label="RSI (14)" value={fmt(technical.rsi)} />
-            <Stat label="MACD" value={fmt(technical.macd.line)} />
-            <Stat label="Signal line" value={fmt(technical.macd.signal)} />
-            <Stat label="Bollinger upper" value={fmt(technical.bollinger.upper)} />
-            <Stat label="Bollinger lower" value={fmt(technical.bollinger.lower)} />
-          </div>
           <h3>Signals</h3>
           <ul>
             {Object.entries(technical.signals).map(([name, signal]) => (
@@ -143,22 +134,10 @@ export default function Dashboard({ ticker }) {
               locale: "en",
             }}
           />
-          <div className="stats">
-          <Stat label="P/E (trailing)" value={fmt(f.pe_ratio)} />
-          <Stat label="P/E (forward)" value={fmt(f.forward_pe)} />
-          <Stat label="P/B" value={fmt(f.pb_ratio)} />
-          <Stat label="EPS" value={fmt(f.eps)} />
-          <Stat label="ROE" value={fmt(f.roe_pct, "%")} />
-          <Stat label="Debt / equity" value={fmt(f.debt_to_equity)} />
-          <Stat label="Current ratio" value={fmt(f.current_ratio)} />
-          <Stat label="Revenue growth" value={fmt(f.revenue_growth_pct, "%")} />
-          <Stat label="Earnings growth" value={fmt(f.earnings_growth_pct, "%")} />
-          <Stat label="Dividend yield" value={fmt(f.dividend_yield_pct, "%")} />
-          </div>
         </>
       )}
 
-      {tab === "Competitors" && <CompetitorTable data={peers} />}
+      {tab === "Competitors" && <CompetitorTable data={peers} onSelect={onSelect} />}
 
       {tab === "News" && (
         <>
@@ -204,10 +183,10 @@ function Stat({ label, value }) {
   );
 }
 
-function CompetitorTable({ data }) {
+function CompetitorTable({ data, onSelect }) {
   if (!data) return <p className="muted">Loading peers…</p>;
   if (data.error) return <p className="error-text">{data.error}</p>;
-  if (data.peers.length === 0) return <p className="muted">No peer group is mapped for this industry yet.</p>;
+  if (data.peers.length === 0) return <p className="muted">No peers are mapped for this stock yet.</p>;
   return (
     <div className="table-wrap">
       <table>
@@ -218,6 +197,7 @@ function CompetitorTable({ data }) {
             <th>P/E</th>
             <th>ROE</th>
             <th>D/E</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -228,6 +208,9 @@ function CompetitorTable({ data }) {
               <td>{fmt(peer.pe_ratio)}</td>
               <td>{fmt(peer.roe_pct, "%")}</td>
               <td>{fmt(peer.debt_to_equity)}</td>
+              <td>
+                <button onClick={() => onSelect(peer.ticker)}>Open</button>
+              </td>
             </tr>
           ))}
         </tbody>

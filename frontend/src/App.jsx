@@ -12,7 +12,7 @@ export default function App() {
         <p className="muted">NSE/BSE listed stocks. Data from Yahoo Finance, may be delayed.</p>
       </header>
       <SearchBar onSearch={setTicker} />
-      {ticker && <Dashboard key={ticker} ticker={ticker} />}
+      {ticker && <Dashboard key={ticker} ticker={ticker} onSelect={setTicker} />}
     </main>
   );
 }

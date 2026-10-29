@@ -13,5 +13,5 @@ async function request(path) {
 
 export const analyze = (ticker) => request(`/api/analyze/${encodeURIComponent(ticker)}`);
 export const competitors = (ticker) => request(`/api/competitors/${encodeURIComponent(ticker)}`);
-export const chart = (ticker, period = "1y") =>
-  request(`/api/chart/${encodeURIComponent(ticker)}?period=${period}`);
+export const chart = (ticker, period = "1y", interval = "1d") =>
+  request(`/api/chart/${encodeURIComponent(ticker)}?period=${period}&interval=${interval}`);

@@ -67,3 +67,22 @@ def technical_summary(close: pd.Series) -> dict:
         "bollinger": {"upper": upper_value, "middle": _last(middle), "lower": lower_value},
         "signals": signals,
     }
+
+
+def chart_indicators(close: pd.Series) -> pd.DataFrame:
+    """Full indicator series aligned to the close index, for the charts."""
+    middle = close.rolling(window=20).mean()
+    std = close.rolling(window=20).std()
+    line, signal_line, hist = macd(close)
+    return pd.DataFrame({
+        "sma20": sma(close, 20),
+        "sma50": sma(close, 50),
+        "sma200": sma(close, 200),
+        "ema20": close.ewm(span=20, adjust=False).mean(),
+        "bb_upper": middle + 2 * std,
+        "bb_lower": middle - 2 * std,
+        "rsi": rsi(close),
+        "macd": line,
+        "macd_signal": signal_line,
+        "macd_hist": hist,
+    }, index=close.index)

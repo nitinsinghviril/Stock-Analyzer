@@ -11,6 +11,7 @@ from services.news_service import latest_news
 from services.stock_service import InvalidTicker, clear_cache, get_history, normalise_ticker
 
 ALLOWED_PERIODS = {"1mo", "3mo", "6mo", "1y", "2y", "5y"}
+ALLOWED_INTERVALS = {"1d", "1wk", "1mo"}
 
 app = FastAPI(title="Stock Analyzer API", version="1.0.0")
 app.add_middleware(
@@ -39,12 +40,14 @@ def _resolve(raw: str) -> str:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-def _history(ticker: str, period: str):
+def _history(ticker: str, period: str, interval: str = "1d"):
     if period not in ALLOWED_PERIODS:
         raise HTTPException(status_code=400, detail=f"period must be one of {sorted(ALLOWED_PERIODS)}")
+    if interval not in ALLOWED_INTERVALS:
+        raise HTTPException(status_code=400, detail=f"interval must be one of {sorted(ALLOWED_INTERVALS)}")
     # yfinance can return a trailing row with no close yet; drop it so the
     # latest price and every indicator use real values.
-    history = get_history(ticker, period).dropna(subset=["Close"])
+    history = get_history(ticker, period, interval).dropna(subset=["Close"])
     if history.empty:
         raise HTTPException(status_code=404, detail=f"No market data for {ticker}")
     return history
@@ -74,24 +77,24 @@ def competitor_view(raw_ticker: str):
 
 
 @app.get("/api/chart/{raw_ticker}")
-def chart(raw_ticker: str, period: str = Query("1y")):
+def chart(raw_ticker: str, period: str = Query("1y"), interval: str = Query("1d")):
     ticker = _resolve(raw_ticker)
-    history = _history(ticker, period)
-    close = history["Close"]
-    sma50 = analysis_service.sma(close, 50)
+    history = _history(ticker, period, interval)
+    indicators = analysis_service.chart_indicators(history["Close"])
     rows = []
     for index, row in history.iterrows():
-        sma_value = sma50.loc[index]
-        rows.append({
+        entry = {
             "date": index.strftime("%Y-%m-%d"),
             "open": round(float(row["Open"]), 2),
             "high": round(float(row["High"]), 2),
             "low": round(float(row["Low"]), 2),
             "close": round(float(row["Close"]), 2),
             "volume": int(row["Volume"]),
-            "sma50": None if sma_value != sma_value else round(float(sma_value), 2),
-        })
-    return json_safe({"ticker": ticker, "period": period, "data": rows})
+        }
+        for name, value in indicators.loc[index].items():
+            entry[name] = round(float(value), 2)
+        rows.append(entry)
+    return json_safe({"ticker": ticker, "period": period, "interval": interval, "data": rows})
 
 
 @app.post("/api/cache/clear")

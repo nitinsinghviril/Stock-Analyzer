@@ -44,11 +44,11 @@ def clear_cache() -> None:
     _cache.clear()
 
 
-def get_history(ticker: str, period: str = "1y") -> pd.DataFrame:
+def get_history(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
     def load():
-        return yf.Ticker(ticker).history(period=period, auto_adjust=True)
+        return yf.Ticker(ticker).history(period=period, interval=interval, auto_adjust=True)
 
-    return _cached(("history", ticker, period), load)
+    return _cached(("history", ticker, period, interval), load)
 
 
 def get_info(ticker: str) -> dict:

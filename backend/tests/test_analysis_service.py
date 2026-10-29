@@ -56,3 +56,12 @@ def test_json_safe_replaces_nan_and_infinity():
 
     data = {"a": float("nan"), "b": [1.5, float("inf")], "c": {"d": None, "e": 2}}
     assert json_safe(data) == {"a": None, "b": [1.5, None], "c": {"d": None, "e": 2}}
+
+
+def test_chart_indicators_returns_aligned_series():
+    close = pd.Series(np.linspace(100, 300, 260))
+    frame = a.chart_indicators(close)
+    assert list(frame.index) == list(close.index)
+    for column in ["sma20", "sma50", "sma200", "ema20", "bb_upper", "bb_lower", "rsi", "macd", "macd_signal", "macd_hist"]:
+        assert column in frame.columns
+    assert frame["sma20"].iloc[-1] == pytest.approx(close.iloc[-20:].mean())
