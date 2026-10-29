@@ -91,26 +91,7 @@ export default function Dashboard({ ticker }) {
 
       {tab === "Technical" && (
         <>
-          <TradingViewWidget
-            script="embed-widget-advanced-chart"
-            height={480}
-            config={{
-              autosize: true,
-              symbol: tvSymbol,
-              interval: "D",
-              timezone: "Asia/Kolkata",
-              theme: colorTheme,
-              style: "1",
-              locale: "en",
-              allow_symbol_change: false,
-              studies: [
-                "MASimple@tv-basicstudies",
-                "RSI@tv-basicstudies",
-                "MACD@tv-basicstudies",
-                "BB@tv-basicstudies",
-              ],
-            }}
-          />
+          <PriceChart data={prices} />
           <TradingViewWidget
             script="embed-widget-technical-analysis"
             height={450}
@@ -151,14 +132,14 @@ export default function Dashboard({ ticker }) {
         <>
           <TradingViewWidget
             script="embed-widget-financials"
-            height={700}
+            height={1400}
             config={{
               symbol: tvSymbol,
               colorTheme,
               isTransparent: false,
               displayMode: "regular",
               width: "100%",
-              height: 700,
+              height: 1400,
               locale: "en",
             }}
           />
@@ -183,7 +164,7 @@ export default function Dashboard({ ticker }) {
         <>
           <TradingViewWidget
             script="embed-widget-timeline"
-            height={550}
+            height={700}
             config={{
               feedMode: "symbol",
               symbol: tvSymbol,
@@ -191,7 +172,7 @@ export default function Dashboard({ ticker }) {
               isTransparent: false,
               displayMode: "regular",
               width: "100%",
-              height: 550,
+              height: 700,
               locale: "en",
             }}
           />
